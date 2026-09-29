@@ -46,7 +46,9 @@ for (let i = 1; i <= iterations; i++) {
     const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
     const extensionId = worker.url().split("/")[2];
 
+    // The host tab starts on an extension page, then navigates to the site, as in our E2E suite
     const host = context.pages()[0] ?? (await context.newPage());
+    await host.goto(`chrome-extension://${extensionId}/options.html`);
     await host.goto(hostUrl);
 
     const cdp = await context.newCDPSession(host);
@@ -62,8 +64,12 @@ for (let i = 1; i <= iterations; i++) {
     );
     await editor.goto(`chrome-extension://${extensionId}/editor.html?tabId=${tabId}`);
 
-    // The side panel only renders for the active tab
-    await host.bringToFront();
+    // Switch tabs a few times, as the E2E flow does, ending on the host: the panel renders for the active tab
+    for (let switches = 0; switches < 3; switches++) {
+      await editor.bringToFront();
+      await host.bringToFront();
+    }
+
     await editor.click("#open");
 
     const deadline = Date.now() + 10_000;
