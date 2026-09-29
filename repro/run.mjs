@@ -33,8 +33,10 @@ for (let i = 1; i <= iterations; i++) {
       `--load-extension=${extensionPath}`,
       "--disable-features=ExtensionDisableUnsupportedDeveloper",
       ...(headless ? ["--headless=new"] : []),
-      // With DEBUG=pw:browser, Playwright prints this browser log for inspection
-      ...(process.env.EDGE_LOGGING === "1" ? ["--enable-logging=stderr"] : []),
+      // Edge's own log, appended to browser.log after each run
+      ...(process.env.EDGE_LOGGING === "1"
+        ? ["--enable-logging", `--log-file=${path.join(profile, "edge.log")}`]
+        : []),
     ],
   });
 
@@ -89,6 +91,11 @@ for (let i = 1; i <= iterations; i++) {
   tally[outcome]++;
   console.log(`#${i} ${outcome}${crashes.length > 0 ? ` (${crashes.join("; ")})` : ""}`);
   await context.close().catch(() => {});
+  if (process.env.EDGE_LOGGING === "1") {
+    const log = await fs.readFile(path.join(profile, "edge.log"), "utf8").catch(() => "");
+    await fs.appendFile("browser.log", `=== run ${i} ${outcome}\n${log}`);
+  }
+
   await fs.rm(profile, { recursive: true, force: true });
 }
 
