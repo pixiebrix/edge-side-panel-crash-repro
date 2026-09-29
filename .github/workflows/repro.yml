@@ -1,0 +1,28 @@
+name: Repro
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      iterations:
+        description: Side panel opens per job
+        default: "30"
+
+jobs:
+  repro:
+    strategy:
+      fail-fast: false
+      matrix:
+        job: [1, 2, 3]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - name: Install Microsoft Edge (stable)
+        run: npx playwright install --with-deps msedge
+      - run: xvfb-run --auto-servernum node repro/run.mjs "${ITERATIONS}"
+        env:
+          ITERATIONS: ${{ inputs.iterations || '30' }}

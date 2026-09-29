@@ -1,11 +1,31 @@
-// Allows users to open the side panel by clicking on the action toolbar icon
-chrome.sidePanel
-  .setPanelBehavior({ openPanelOnActionClick: true })
-  .catch((error) => console.error(error));
+// Mirrors how the extension opens its side panel: setOptions (not awaited), then open()
+async function openSidePanel(tabId) {
+  void chrome.sidePanel.setOptions({
+    tabId,
+    enabled: true,
+    path: `sidepanel.html?tabId=${tabId}`,
+  });
 
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-  if (request.command === "click") {
-    sendResponse({ success: "success" });
+  try {
+    await chrome.sidePanel.open({ tabId });
+  } catch (error) {
+    // Expected for the no-gesture calls relayed from the content script
+    console.log("sidePanel.open failed:", error.message);
+  }
+}
+
+chrome.tabs.onCreated.addListener(({ id }) => {
+  if (id) {
+    void chrome.sidePanel.setOptions({
+      tabId: id,
+      path: `sidepanel.html?tabId=${id}`,
+    });
+  }
+});
+
+chrome.runtime.onMessage.addListener((request, sender) => {
+  if (request.command === "open" && sender.tab?.id) {
+    void openSidePanel(sender.tab.id);
   }
 });
 

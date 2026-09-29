@@ -1,0 +1,11 @@
+{
+  "name": "edge-side-panel-crash-repro",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "repro": "node repro/run.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

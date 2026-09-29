@@ -2,16 +2,16 @@
   "manifest_version": 3,
   "version": "1.0.0",
   "author": "PixieBrix, Inc.",
-  "name": "PixieBrix Minimum Extension Template",
+  "name": "Edge Side Panel Crash Repro",
   "short_name": "PixieBrix",
-  "description": "Template repository for minimum extension for issue reproductions",
+  "description": "Minimal reproduction: opening the side panel crashes the extension renderer on Microsoft Edge",
   "minimum_chrome_version": "116.0",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; font-src 'self' https://fonts.gstatic.com; connect-src 'self' http: https:; object-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:; frame-src 'self' http: https:"
   },
   "permissions": ["activeTab", "tabs", "sidePanel"],
   "action": {
-    "default_title": "Minimum Extension Template"
+    "default_title": "Edge Side Panel Crash Repro"
   },
   "background": {
     "service_worker": "serviceWorker.js"
