@@ -23,6 +23,20 @@ jobs:
       - run: npm ci
       - name: Install Microsoft Edge (stable)
         run: npx playwright install --with-deps msedge
-      - run: xvfb-run --auto-servernum node repro/run.mjs "${ITERATIONS}"
+      - name: Run the reproduction
+        run: |
+          set +e
+          xvfb-run --auto-servernum node repro/run.mjs "${ITERATIONS}" 2> browser.log
+          code=$?
+          echo "StackChildLayerRelativeTo warnings: $(grep -c StackChildLayerRelativeTo browser.log)"
+          grep -E "FATAL|Check failed|Received signal" browser.log | head -20
+          exit $code
         env:
           ITERATIONS: ${{ inputs.iterations || '30' }}
+          DEBUG: pw:browser
+          EDGE_LOGGING: "1"
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: browser-log-${{ matrix.job }}
+          path: browser.log

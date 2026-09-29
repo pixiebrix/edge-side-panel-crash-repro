@@ -33,6 +33,8 @@ for (let i = 1; i <= iterations; i++) {
       `--load-extension=${extensionPath}`,
       "--disable-features=ExtensionDisableUnsupportedDeveloper",
       ...(headless ? ["--headless=new"] : []),
+      // With DEBUG=pw:browser, Playwright prints this browser log for inspection
+      ...(process.env.EDGE_LOGGING === "1" ? ["--enable-logging=stderr"] : []),
     ],
   });
 

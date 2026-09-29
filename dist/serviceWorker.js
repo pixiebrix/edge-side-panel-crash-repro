@@ -29,4 +29,13 @@ chrome.runtime.onMessage.addListener((request, sender) => {
   }
 });
 
+// The full extension keeps an offscreen document open from startup
+void chrome.offscreen
+  .createDocument({
+    url: "offscreen.html",
+    reasons: ["DOM_PARSER"],
+    justification: "Hosts a sandboxed frame, as the full extension does",
+  })
+  .catch((error) => console.log("offscreen:", error.message));
+
 console.log("Background script loaded.");
