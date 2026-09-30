@@ -34,6 +34,7 @@ jobs:
       # Testing is the same stable version and still does
       - name: Install Chrome for Testing (stable)
         if: matrix.channel == 'chrome'
+        shell: bash
         run: |
           set -euo pipefail
           apt-get update && apt-get install -y unzip
