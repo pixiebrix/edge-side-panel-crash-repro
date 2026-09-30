@@ -35,8 +35,11 @@ jobs:
       - name: Install Chrome for Testing (stable)
         if: matrix.channel == 'chrome'
         run: |
+          set -euo pipefail
+          apt-get update && apt-get install -y unzip
           npx playwright install-deps chromium
           path=$(npx -y @puppeteer/browsers install chrome@stable --path /opt/cft | awk '{print substr($0, index($0, " ") + 1)}')
+          test -x "${path}"
           echo "BROWSER_PATH=${path}" >> "$GITHUB_ENV"
       - name: Run the reproduction
         run: |
