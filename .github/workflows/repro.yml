@@ -10,16 +10,16 @@ on:
 
 jobs:
   repro:
-    name: repro (${{ matrix.channel }} ${{ matrix.job }})
+    name: repro (${{ matrix.channel }} ${{ matrix.edge_version || 'latest' }} ${{ matrix.job }})
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { channel: msedge, job: 1 }
-          - { channel: msedge, job: 2 }
-          - { channel: msedge, job: 3 }
-          - { channel: chrome, job: 1 }
-          - { channel: chrome, job: 2 }
+          # The crash was captured on 154.0.4258.37; pin it, and keep one job on the latest build
+          - { channel: msedge, edge_version: "154.0.4258.37-1", job: 1 }
+          - { channel: msedge, edge_version: "154.0.4258.37-1", job: 2 }
+          - { channel: msedge, edge_version: "154.0.4258.37-1", job: 3 }
+          - { channel: msedge, job: 4 }
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     container:
@@ -30,6 +30,13 @@ jobs:
       - name: Install Microsoft Edge (stable)
         if: matrix.channel == 'msedge'
         run: npx playwright install --with-deps msedge
+      - name: Pin the Microsoft Edge build
+        if: matrix.edge_version
+        run: |
+          apt-get install -y --allow-downgrades "microsoft-edge-stable=${EDGE_VERSION}"
+          /opt/microsoft/msedge/msedge --version
+        env:
+          EDGE_VERSION: ${{ matrix.edge_version }}
       # Branded Chrome no longer loads unpacked extensions from the command line; Chrome for
       # Testing is the same stable version and still does
       - name: Install Chrome for Testing (stable)
@@ -57,5 +64,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: browser-log-${{ matrix.channel }}-${{ matrix.job }}
+          name: browser-log-${{ matrix.channel }}-${{ matrix.edge_version || 'latest' }}-${{ matrix.job }}
           path: browser.log
