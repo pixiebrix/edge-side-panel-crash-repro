@@ -19,20 +19,48 @@ function computeTypes() {
   return checksum;
 }
 
+async function pingSidePanel(attempts) {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      if ((await chrome.runtime.sendMessage({ command: "ping", tabId })) === "pong") {
+        return true;
+      }
+    } catch {
+      // No listener yet
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  return false;
+}
+
 document.querySelector("#open").addEventListener("click", async () => {
-  // Same sequence as the service worker's openSidePanel, with this click's user gesture
+  // The full extension awaits the inspected tab's URL here, so the click's gesture may expire
+  await chrome.tabs.get(tabId);
+
+  // The host tab's content script installs the panel and asks the worker to open it too
+  void chrome.tabs.sendMessage(tabId, { command: "relay-open" });
+
+  const initiallyOpen = pingSidePanel(1);
   void chrome.sidePanel.setOptions({
     tabId,
     enabled: true,
     path: `sidepanel.html?tabId=${tabId}`,
   });
 
+  setTimeout(() => console.log("types checksum", computeTypes()), 600);
+
   try {
     await chrome.sidePanel.open({ tabId });
   } catch (error) {
     console.log("sidePanel.open failed:", error.message);
+    if (!(await initiallyOpen)) {
+      void chrome.tabs.sendMessage(tabId, { command: "show-dialog" });
+    }
+
+    return;
   }
 
-  await chrome.tabs.sendMessage(tabId, { command: "relay-open" });
-  console.log("types checksum", computeTypes());
+  await pingSidePanel(50);
 });

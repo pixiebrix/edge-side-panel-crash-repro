@@ -26,12 +26,14 @@ const tally = { opened: 0, crashed: 0, noPanel: 0, error: 0 };
 for (let i = 1; i <= iterations; i++) {
   const profile = await fs.mkdtemp(path.join(os.tmpdir(), "edge-repro-"));
   const context = await chromium.launchPersistentContext(profile, {
-    channel,
+    // Chrome for Testing: branded Chrome no longer loads unpacked extensions from the command line
+    ...(process.env.BROWSER_PATH ? { executablePath: process.env.BROWSER_PATH } : { channel }),
     headless: false,
     args: [
       `--disable-extensions-except=${extensionPath}`,
       `--load-extension=${extensionPath}`,
-      "--disable-features=ExtensionDisableUnsupportedDeveloper",
+      // Branded Chrome ignores --load-extension unless DisableLoadExtensionCommandLineSwitch is off
+      "--disable-features=ExtensionDisableUnsupportedDeveloper,DisableLoadExtensionCommandLineSwitch",
       ...(headless ? ["--headless=new"] : []),
       // Edge's own log, appended to browser.log after each run
       ...(process.env.EDGE_LOGGING === "1"
@@ -111,8 +113,9 @@ console.log(`RESULT ${version} ${JSON.stringify(tally)}`);
 process.exitCode = tally.crashed > 0 ? 1 : 0;
 
 async function getBrowserVersion() {
-  const browser = await chromium.launch({ channel, headless: true }).catch(() => null);
+  const target = process.env.BROWSER_PATH ? { executablePath: process.env.BROWSER_PATH } : { channel };
+  const browser = await chromium.launch({ ...target, headless: true }).catch(() => null);
   const version = browser?.version() ?? "unknown";
   await browser?.close();
-  return `${channel} ${version}`;
+  return `${process.env.BROWSER_PATH ? "chrome-for-testing" : channel} ${version}`;
 }
